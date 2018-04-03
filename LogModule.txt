@@ -1,0 +1,1 @@
+My.Application.Log.DefaultFileLogWriter.CustomLocation = "C:\Users\Temp\SigBlockLogDir" My.Application.Log.DefaultFileLogWriter.BaseFileName = "mySigBlockLogFile" My.Application.Log.WriteEntry( "Custom Message", TraceEventType.Warning, 1234)

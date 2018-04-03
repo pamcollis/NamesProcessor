@@ -1,0 +1,56 @@
+Module LoggingModule
+  Private LogFileInfo As System.IO.FileInfo = Nothing
+
+  Friend Sub Write(ByVal text As System.String, Optional ByVal filename As System.String = "", Optional ByVal appendfile As System.Boolean = True, Optional ByVal includetimestamp As System.Boolean = False)
+    Dim ThisLog_FQP As System.String = System.String.Empty
+    If (filename = Nothing) OrElse (filename = System.String.Empty) OrElse (filename = "") Then
+      ThisLog_FQP = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly.Location) & "\LOGS\" & System.DateTime.Now.ToString("MM-dd-yyyy.hh-mm-ss") & ".log"
+    Else
+      ThisLog_FQP = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly.Location) & "\LOGS\" & filename & ".log"
+    End If '(filename = Nothing) OrElse (filename = System.String.Empty) OrElse (filename = "") Then
+
+    If LoggingModule.LogFileInfo Is Nothing Then
+      LoggingModule.LogFileInfo = New System.IO.FileInfo(ThisLog_FQP)
+    ElseIf (LoggingModule.LogFileInfo.FullName <> ThisLog_FQP) Then
+      SyncLock LoggingModule.LogFileInfo
+        LoggingModule.LogFileInfo = New System.IO.FileInfo(ThisLog_FQP)
+      End SyncLock 'LoggingModule.LogFileInfo
+    End If 'Logging.LogFileInfo Is Nothing Then
+
+    SyncLock LoggingModule.LogFileInfo
+      If LoggingModule.LogFileInfo.Directory.Exists = False Then
+        LoggingModule.LogFileInfo.Directory.Create()
+      End If 'LoggingModule.LogFileInfo.Directory.Exists = False Then
+
+      If ((LoggingModule.LogFileInfo.Directory.Exists = True) AndAlso (appendfile = False)) Then
+        With LoggingModule.LogFileInfo
+          .Delete()
+          .Refresh()
+        End With 'LoggingModule.LogFileInfo
+      End If '((LoggingModule.LogFileInfo.Directory.Exists = True) AndAlso (appendfile = False)) Then
+
+      If LoggingModule.LogFileInfo.Exists = False Then
+        With LoggingModule.LogFileInfo.Open(IO.FileMode.OpenOrCreate, IO.FileAccess.ReadWrite, IO.FileShare.Read)
+          .Close()
+          .Dispose()
+        End With 'LoggingModule.LogFileInfo.Open(IO.FileMode.OpenOrCreate, IO.FileAccess.ReadWrite, IO.FileShare.Read)
+      End If 'LoggingModule.LogFileInfo.Exists = False Then
+
+      LoggingModule.LogFileInfo.Refresh()
+
+      Dim TimeStamp As System.String = System.DateTime.Now.ToString("[MM-dd-yyyy hh:mm:ss]")
+      Dim LogText As System.String = CType(IIf(LoggingModule.LogFileInfo.Length > 0, vbNewLine & vbNewLine, System.String.Empty), System.String) & CType(IIf(includetimestamp, TimeStamp, System.String.Empty), System.String) & vbNewLine & _
+                      text
+      Dim LogBuf As System.Byte() = System.Text.Encoding.ASCII.GetBytes(LogText)
+      With LoggingModule.LogFileInfo.Open(IO.FileMode.OpenOrCreate, IO.FileAccess.ReadWrite, IO.FileShare.Read)
+        .Position = LoggingModule.LogFileInfo.Length
+
+        .Write(LogBuf, 0, LogBuf.Length)
+
+        .Close()
+        .Dispose()
+      End With 'Logging.LogFileInfo.Open(IO.FileMode.OpenOrCreate, IO.FileAccess.ReadWrite, IO.FileShare.Read)
+    End SyncLock 'Logging.LogFileInfo
+
+  End Sub 'Write(ByVal text As System.String)
+End Module 'Logging
